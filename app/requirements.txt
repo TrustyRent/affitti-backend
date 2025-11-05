@@ -1,0 +1,21 @@
+fastapi==0.119.0
+uvicorn[standard]==0.37.0
+pydantic==2.12.2
+python-dotenv==1.1.1
+passlib==1.7.4
+requests==2.32.3
+python-jose==3.3.0
+
+supabase==2.22.0
+supabase-auth==2.22.0
+supabase-functions==2.22.0
+postgrest==2.22.0
+realtime==2.22.0
+storage3==2.22.0
+
+# vincoli rete conformi a supabase-functions 2.22
+httpx[http2]==0.27.2
+httpcore>=1.0,<2
+h2>=4,<5
+hyperframe>=6,<7
+websockets==15.0.1

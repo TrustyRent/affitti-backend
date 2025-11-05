@@ -1,0 +1,24 @@
+fastapi==0.119.0
+uvicorn[standard]==0.37.0
+python-dotenv==1.1.1
+passlib[bcrypt]==1.7.4
+
+# API REST verso Supabase
+requests>=2.31
+
+# se usi EmailStr
+pydantic[email]==2.12.2
+
+# pacchetti Supabase (li stai usando altrove)
+supabase==2.22.0
+supabase-auth==2.22.0
+supabase-functions==2.22.0
+postgrest==2.22.0
+realtime==2.22.0
+storage3==2.22.0
+
+httpx[http2]==0.27.2
+httpcore>=1.0,<2
+h2>=4,<5
+hyperframe>=6,<7
+websockets==15.0.1

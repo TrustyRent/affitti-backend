@@ -1,0 +1,25 @@
+# IDE & OS
+.vs/
+.idea/
+.DS_Store
+
+# Python build/cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.sqlite3
+.mypy_cache/
+.pytest_cache/
+
+# Virtual env
+.venv/
+env/
+venv/
+
+# Secrets
+.env
+
+# Node stuff (se presente)
+node_modules/
