@@ -1,23 +1,30 @@
 # app/core/logging.py
+from __future__ import annotations
 import time
-import uuid
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
+from typing import Callable
+from starlette.types import ASGIApp, Receive, Scope, Send
 
-class AccessLogMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        rid = request.headers.get("x-request-id") or uuid.uuid4().hex[:12]
+class AccessLogMiddleware:
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        method = scope.get("method")
+        path = scope.get("path")
         start = time.perf_counter()
-        response = await call_next(request)
-        dur_ms = int((time.perf_counter() - start) * 1000)
+        status_holder = {"code": 200}
 
-        # aggiungo l'id nella risposta
-        response.headers["X-Request-ID"] = rid
+        async def send_wrapper(message):
+            if message["type"] == "http.response.start":
+                status_holder["code"] = message["status"]
+            await send(message)
 
-        # log compatto
-        method = request.method
-        path = request.url.path
-        status = response.status_code
-        print(f"[{rid}] {method} {path} -> {status} {dur_ms}ms")
-
-        return response
+        try:
+            await self.app(scope, receive, send_wrapper)
+        finally:
+            dur_ms = int((time.perf_counter() - start) * 1000)
+            # Log minimale su stdout (Render / Railway lo raccolgono)
+            print(f"[ACCESS] {method} {path} -> {status_holder['code']} ({dur_ms}ms)")

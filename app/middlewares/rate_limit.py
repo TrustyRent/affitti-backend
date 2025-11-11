@@ -1,4 +1,5 @@
 # app/middlewares/rate_limit.py
+import os
 import time
 from fastapi import Request, HTTPException
 from typing import Dict, Tuple
@@ -8,7 +9,9 @@ _BUCKETS: Dict[Tuple[str, str], Tuple[float, int]] = {}
 
 WINDOW_SEC = int(os.getenv("RL_WINDOW_SEC", "60"))
 MAX_REQ = int(os.getenv("RL_MAX_REQ", "10"))
-PROTECTED_PATHS = set((p.strip() for p in os.getenv("RL_PATHS", "/auth/login,/auth/register,/auth/forgot").split(",")))
+PROTECTED_PATHS = set(
+    (p.strip() for p in os.getenv("RL_PATHS", "/auth/login,/auth/register,/auth/forgot").split(","))
+)
 
 async def rate_limit_middleware(request: Request, call_next):
     path = request.url.path
