@@ -28,7 +28,7 @@ if not SUPABASE_URL or not ANON_KEY or not SERVICE_ROLE:
         "Config mancante: SUPABASE_URL / SUPABASE_ANON_KEY / SUPABASE_SERVICE_ROLE_KEY"
     )
 
-# Nomi cookie
+# Nomi cookie base (ma poi sotto accettiamo un sacco di varianti)
 ACCESS_COOKIE = os.getenv("ACCESS_COOKIE_NAME", "access_token")
 REFRESH_COOKIE = os.getenv("REFRESH_COOKIE_NAME", "refresh_token")
 
@@ -151,25 +151,31 @@ class ResetIn(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=256)
 
 
-# ==== Cookie pickers ==== 
-# QUI è il cambiamento importante: aggiungo le varianti con underscore
-ALT_ACCESS_NAMES = [
-    ACCESS_COOKIE,
-    "_access_token",
-    "__access_token",
-    "sb-access-token",
-    "accessToken",
-    "sb-accessToken",
-]
+# ==== Cookie pickers ====
+# Qui allarghiamo al massimo i nomi accettati, per intercettare qualunque cookie usato finora
+ALT_ACCESS_NAMES = list(
+    {
+        "access_token",
+        "_access_token",
+        "__access_token",
+        ACCESS_COOKIE,
+        "sb-access-token",
+        "accessToken",
+        "sb-accessToken",
+    }
+)
 
-ALT_REFRESH_NAMES = [
-    REFRESH_COOKIE,
-    "_refresh_token",
-    "__refresh_token",
-    "sb-refresh-token",
-    "refreshToken",
-    "sb-refreshToken",
-]
+ALT_REFRESH_NAMES = list(
+    {
+        "refresh_token",
+        "_refresh_token",
+        "__refresh_token",
+        REFRESH_COOKIE,
+        "sb-refresh-token",
+        "refreshToken",
+        "sb-refreshToken",
+    }
+)
 
 
 def pick_access(req: Request, authorization: str) -> Optional[str]:
@@ -343,7 +349,7 @@ def me(
     if not token:
         refresh_token = pick_refresh(request)
         if not refresh_token:
-            raise HTTPException(status_code=401, detail="Token mancante V3")
+            raise HTTPException(status_code=401, detail="Token mancante V4")
 
         r = requests.post(
             f"{SUPABASE_URL}/auth/v1/token?grant_type=refresh_token",
