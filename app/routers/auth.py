@@ -343,7 +343,7 @@ def me(
     if not token:
         refresh_token = pick_refresh(request)
         if not refresh_token:
-            raise HTTPException(status_code=401, detail="Token mancante")
+            raise HTTPException(status_code=401, detail="Token mancante V3")
 
         r = requests.post(
             f"{SUPABASE_URL}/auth/v1/token?grant_type=refresh_token",
