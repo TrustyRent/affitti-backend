@@ -151,10 +151,21 @@ class ResetIn(BaseModel):
     new_password: str = Field(..., min_length=8, max_length=256)
 
 
-# ==== Cookie pickers ====
-ALT_ACCESS_NAMES = [ACCESS_COOKIE, "sb-access-token", "accessToken", "sb-accessToken"]
+# ==== Cookie pickers ==== 
+# QUI è il cambiamento importante: aggiungo le varianti con underscore
+ALT_ACCESS_NAMES = [
+    ACCESS_COOKIE,
+    "_access_token",
+    "__access_token",
+    "sb-access-token",
+    "accessToken",
+    "sb-accessToken",
+]
+
 ALT_REFRESH_NAMES = [
     REFRESH_COOKIE,
+    "_refresh_token",
+    "__refresh_token",
     "sb-refresh-token",
     "refreshToken",
     "sb-refreshToken",
