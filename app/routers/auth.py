@@ -1,4 +1,3 @@
-# app/routers/auth.py
 from __future__ import annotations
 
 import os
@@ -83,7 +82,7 @@ def _admin_headers() -> dict[str, str]:
 def _anon_headers() -> dict[str, str]:
     return {
         "apikey": ANON_KEY,
-        "Authorization": f"Bearer {ANON_KEY}",
+        "Authorization": f"Bearer ANON_KEY",
         "Content-Type": "application/json",
     }
 
