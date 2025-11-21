@@ -343,48 +343,61 @@ def me(
 ):
     """
     Restituisce l'utente corrente.
-    - Prima prova con access_token (header/cookie)
-    - Se manca ma c'è un refresh_token, fa il refresh al volo,
-      aggiorna i cookie e poi legge l'utente.
+    - Prova prima con access_token (header/cookie)
+    - Se Supabase lo rifiuta e c'è un refresh_token, esegue refresh automatico,
+      aggiorna i cookie e riprova.
     """
-    # 1) Prova a prendere l'access token
-    token = pick_access(request, authorization) or access_cookie
 
-    # 2) Se non c'è access ma abbiamo un refresh → refresh automatico
-    if not token:
-        refresh_token = pick_refresh(request)
-        if not refresh_token:
-            raise HTTPException(status_code=401, detail="Token mancante")
-
-        r = requests.post(
-            f"{SUPABASE_URL}/auth/v1/token?grant_type=refresh_token",
-            headers=_anon_headers(),
-            json={"refresh_token": refresh_token},
+    def _get_user_with_access(access_token: str) -> requests.Response:
+        return requests.get(
+            f"{SUPABASE_URL}/auth/v1/user",
+            headers={"Authorization": f"Bearer {access_token}", "apikey": ANON_KEY},
             timeout=8,
         )
-        if r.status_code != 200:
-            # refresh fallito → consideriamo il token non valido
-            raise HTTPException(status_code=401, detail="Token non valido")
 
-        data = r.json()
-        token = data["access_token"]
-        new_refresh = data.get("refresh_token")
+    # Access e refresh dal contesto
+    access_token = pick_access(request, authorization) or access_cookie
+    refresh_token = pick_refresh(request)
 
-        # aggiorna cookie access + refresh
-        _set_cookie(response, ACCESS_COOKIE, token, ACCESS_MAX_AGE)
-        if new_refresh:
-            _set_cookie(response, REFRESH_COOKIE, new_refresh, REFRESH_MAX_AGE)
+    # 1) Se abbiamo subito un access_token, proviamo a usarlo
+    if access_token:
+        r = _get_user_with_access(access_token)
+        if r.status_code == 200:
+            return r.json()
+        # Se è scaduto o non valido, ma abbiamo un refresh_token, proviamo il refresh
+        if not refresh_token:
+            raise HTTPException(status_code=401, detail="Token non valido o scaduto")
 
-    # 3) A questo punto abbiamo sicuramente un access token → chiamiamo /auth/v1/user
-    r = requests.get(
-        f"{SUPABASE_URL}/auth/v1/user",
-        headers={"Authorization": f"Bearer {token}", "apikey": ANON_KEY},
+    # 2) Se non abbiamo access_token valido ma c'è un refresh_token → refresh automatico
+    if not refresh_token:
+        # né access valido né refresh → 401
+        raise HTTPException(status_code=401, detail="Token mancante")
+
+    r = requests.post(
+        f"{SUPABASE_URL}/auth/v1/token?grant_type=refresh_token",
+        headers=_anon_headers(),
+        json={"refresh_token": refresh_token},
         timeout=8,
     )
     if r.status_code != 200:
-        raise HTTPException(status_code=401, detail="Token non valido")
+        # refresh fallito → token non valido/scaduto
+        raise HTTPException(status_code=401, detail="Token non valido o scaduto")
 
-    return r.json()
+    data = r.json()
+    new_access = data["access_token"]
+    new_refresh = data.get("refresh_token")
+
+    # aggiorna cookie access + refresh
+    _set_cookie(response, ACCESS_COOKIE, new_access, ACCESS_MAX_AGE)
+    if new_refresh:
+        _set_cookie(response, REFRESH_COOKIE, new_refresh, REFRESH_MAX_AGE)
+
+    # 3) Ora riproviamo a leggere l'utente con il nuovo access_token
+    r_user = _get_user_with_access(new_access)
+    if r_user.status_code != 200:
+        raise HTTPException(status_code=401, detail="Token non valido o scaduto")
+
+    return r_user.json()
 
 
 @router.post("/logout")
